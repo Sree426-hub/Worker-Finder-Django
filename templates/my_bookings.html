@@ -1,0 +1,111 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings</title>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: url("{% static 'images/auth-bg.jpg' %}") no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    {% include '_messages.html' %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">My Bookings <small class="fs-6 text-white-50">{{ customer.name }}</small></h2>
+        <div class="d-flex gap-2">
+            <a href="/workers/" class="btn btn-light">Find Workers</a>
+            <a href="/logout/" class="btn btn-outline-light">Logout</a>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for b in bookings %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow h-100 p-3">
+
+                <div class="d-flex justify-content-between align-items-start">
+                    <h5 class="mb-1">
+                        <a href="/worker/{{ b.worker.id }}/" class="text-decoration-none text-dark">{{ b.worker.name }}</a>
+                    </h5>
+                    <span class="badge bg-{{ b.status_color }}">{{ b.status }}</span>
+                </div>
+                <p class="text-muted mb-2">{{ b.worker.skill }}</p>
+
+                <p class="mb-1">
+                    <b>When:</b>
+                    {% if b.date %}{{ b.date|date:"D, d M Y" }} &middot; {{ b.get_time_slot_display }}{% else %}-{% endif %}
+                </p>
+                <p class="mb-2"><b>Address:</b> {{ b.address }}</p>
+
+                {% if b.status == 'Accepted' and b.otp %}
+                <div class="alert alert-primary py-2 mb-2">
+                    <small class="d-block">Start code. Tell it to the worker only when they arrive.</small>
+                    <span class="fs-3 fw-bold" style="letter-spacing:.3rem">{{ b.otp }}</span>
+                </div>
+                {% elif b.status == 'Started' %}
+                <div class="alert alert-info py-2 mb-2">Job in progress.</div>
+                {% endif %}
+
+                <div class="mt-auto">
+                    {% if b.status == 'Pending' %}
+                    <a href="{{ b.whatsapp_worker_url }}" target="_blank" rel="noopener"
+                       class="btn btn-success w-100 mb-2">Notify {{ b.worker.name }} on WhatsApp</a>
+                    {% endif %}
+
+                    {% if b.status == 'Pending' or b.status == 'Accepted' %}
+                    <form method="POST" action="/cancel_booking/{{ b.id }}/">
+                        {% csrf_token %}
+                        <button class="btn btn-outline-danger w-100">Cancel booking</button>
+                    </form>
+                    {% endif %}
+
+                    {% if b.status == 'Completed' %}
+                        {% if b.review %}
+                        <p class="mb-0">
+                            <b>Your review:</b>
+                            <span class="text-warning">{% for i in "12345" %}{% if forloop.counter <= b.review.rating %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</span>
+                            {% if b.review.comment %}<br><small>{{ b.review.comment }}</small>{% endif %}
+                        </p>
+                        {% else %}
+                        <form method="POST" action="/leave_review/{{ b.id }}/">
+                            {% csrf_token %}
+                            <label class="form-label mb-1" for="rating-{{ b.id }}">Rate this job</label>
+                            <select name="rating" id="rating-{{ b.id }}" class="form-select mb-2" required>
+                                <option value="">Choose rating</option>
+                                <option value="5">5 - Excellent</option>
+                                <option value="4">4 - Good</option>
+                                <option value="3">3 - Okay</option>
+                                <option value="2">2 - Poor</option>
+                                <option value="1">1 - Bad</option>
+                            </select>
+                            <textarea name="comment" class="form-control mb-2" rows="2" maxlength="500"
+                                      placeholder="Comment (optional)"></textarea>
+                            <button class="btn btn-primary w-100">Submit review</button>
+                        </form>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-center text-white fs-5">No bookings yet. <a href="/workers/" class="text-white">Find a worker</a>.</p>
+        {% endfor %}
+    </div>
+
+</div>
+
+</body>
+</html>

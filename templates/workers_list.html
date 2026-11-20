@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workers</title>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: url("{% static 'images/auth-bg.jpg' %}") no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    {% include '_messages.html' %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Available Workers</h2>
+        <div class="d-flex gap-2">
+            <a href="/my_bookings/" class="btn btn-light">My Bookings</a>
+            <a href="/home/" class="btn btn-outline-light">Home</a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="GET" class="card shadow p-3 mb-4">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label mb-1" for="search">Skill</label>
+                <input type="text" id="search" name="search" class="form-control"
+                       placeholder="plumber, electrician..." value="{{ search }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label mb-1" for="area">Area</label>
+                <input type="text" id="area" name="area" class="form-control" list="area-list"
+                       placeholder="Marathahalli, Whitefield..." value="{{ area }}">
+                <datalist id="area-list">
+                    {% for a in areas %}<option value="{{ a }}">{% endfor %}
+                </datalist>
+            </div>
+            <div class="col-md-3">
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" role="switch" id="urgent"
+                           name="urgent" value="1" {% if urgent %}checked{% endif %}>
+                    <label class="form-check-label" for="urgent">
+                        <b>Urgent / Same-day help</b>
+                        <small class="d-block text-muted">Workers free right now</small>
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100">Search</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Worker cards -->
+    <div class="row">
+
+        {% for i in workers %}
+
+        <div class="col-md-4 mb-4">
+
+            <div class="card shadow h-100">
+
+                {% if i.image %}
+                <img src="{{ i.image.url }}" height="200" class="card-img-top" style="object-fit:cover" alt="{{ i.name }}">
+                {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-secondary text-white display-3 fw-bold"
+                     style="height:200px">{{ i.name|slice:":1"|upper }}</div>
+                {% endif %}
+
+                <div class="card-body d-flex flex-column">
+
+                    <h4 class="mb-1">
+                        <a href="/worker/{{ i.id }}/" class="text-decoration-none text-dark">{{ i.name }}</a>
+                        {% if i.verified %}<span class="badge bg-success align-middle fs-6" title="ID checked by admin">&#10003; Verified</span>{% endif %}
+                    </h4>
+
+                    <div class="mb-2">
+                        {% if i.review_count %}
+                        <span class="text-warning">&#9733;</span> <b>{{ i.avg_rating|floatformat:1 }}</b>
+                        <small class="text-muted">({{ i.review_count }} review{{ i.review_count|pluralize }})</small>
+                        {% else %}
+                        <small class="text-muted">No reviews yet</small>
+                        {% endif %}
+                    </div>
+
+                    <p class="mb-1"><b>Skill:</b> {{ i.skill }}</p>
+                    {% if i.area %}<p class="mb-1"><b>Area:</b> {{ i.area }}</p>{% endif %}
+                    <p class="mb-1"><b>Experience:</b> {{ i.experience }} years</p>
+
+                    <p class="mb-2">
+                        <b>Rates:</b>
+                        {% if i.visit_charge %}Visit &#8377;{{ i.visit_charge }}{% endif %}
+                        {% if i.visit_charge and i.day_rate %} &middot; {% endif %}
+                        {% if i.day_rate %}Day &#8377;{{ i.day_rate }}{% endif %}
+                        {% if not i.visit_charge and not i.day_rate %}<span class="text-muted">Ask worker</span>{% endif %}
+                    </p>
+
+                    <p class="mb-3">
+                        {% if not i.available %}
+                        <span class="badge bg-danger">Not available</span>
+                        {% elif i.available_now %}
+                        <span class="badge bg-success">Available now</span>
+                        {% else %}
+                        <span class="badge bg-info text-dark">Available by appointment</span>
+                        {% endif %}
+                    </p>
+
+                    <div class="mt-auto d-flex gap-2">
+                        <a href="/worker/{{ i.id }}/" class="btn btn-outline-secondary w-50">Details</a>
+                        <a href="/book/{{ i.id }}/"
+                           class="btn btn-success w-50{% if not i.available %} disabled{% endif %}">Book Now</a>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% empty %}
+        <p class="text-center text-white fs-5">No workers found. Try another skill or area.</p>
+        {% endfor %}
+
+    </div>
+
+</div>
+
+</body>
+</html>
